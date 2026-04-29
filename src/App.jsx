@@ -1178,33 +1178,64 @@ ${emp.telefone ? `📞 Dúvidas: ${emp.telefone}` : ""}`;
 
         {/* Itens */}
         <Card style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 12 }}>🔧 Itens</div>
+          <div style={{ fontWeight: 800, marginBottom: 12 }}>🔧 Itens do Orçamento</div>
 
-          <div style={{ position: "relative", marginBottom: 10 }}>
-            <Lbl>Buscar peça ou serviço</Lbl>
-            <input value={buscaP} onChange={e => setBuscaP(e.target.value)} placeholder="Digite para buscar..." />
+          {/* Busca no banco */}
+          <div style={{ position: "relative", marginBottom: 12 }}>
+            <Lbl>🔍 Buscar no banco de peças/serviços</Lbl>
+            <input value={buscaP} onChange={e => setBuscaP(e.target.value)}
+              placeholder="Digite o nome da peça ou serviço..." />
             {sugsP.length > 0 && (
               <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: C.card, border: `1px solid ${C.accent}`, borderRadius: 10, zIndex: 99, boxShadow: "0 8px 24px #0008", overflow: "hidden" }}>
                 {sugsP.map(p => (
                   <div key={p.id} onClick={() => selProduto(p)} style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontWeight: 700 }}>{p.nome}</div>
-                      <Badge color={p.tipo === "servico" ? C.blue : C.green}>{p.tipo === "servico" ? "Serviço" : "Peça"}</Badge>
+                      <Badge color={p.tipo === "servico" ? C.blue : C.green}>{p.tipo === "servico" ? "🛠️ Serviço" : "🔩 Peça"}</Badge>
                     </div>
                     <div style={{ color: C.accent, fontWeight: 800 }}>{fmt(p.valor)}</div>
                   </div>
                 ))}
               </div>
             )}
+            {buscaP.length >= 1 && sugsP.length === 0 && (
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", marginTop: 4, fontSize: 13, color: C.muted }}>
+                Nenhum resultado — preencha abaixo e adicione manualmente
+              </div>
+            )}
           </div>
 
+          {/* Divisor */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 700 }}>OU PREENCHA MANUALMENTE</div>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+          </div>
+
+          {/* Tipo */}
+          <div style={{ marginBottom: 10 }}>
+            <Lbl>Tipo</Lbl>
+            <Row gap={8}>
+              {[["peca", "🔩 Peça"], ["servico", "🛠️ Serviço"]].map(([val, label]) => (
+                <button key={val} onClick={() => setAI({ ...addItem, tipo: val })} style={{
+                  flex: 1, padding: "10px 8px", borderRadius: 10, fontWeight: 700, fontSize: 13,
+                  background: addItem.tipo === val ? (val === "servico" ? C.blue : C.green) : C.bg,
+                  color: addItem.tipo === val ? "#fff" : C.muted,
+                  border: `1.5px solid ${addItem.tipo === val ? (val === "servico" ? C.blue : C.green) : C.border}`,
+                }}>{label}</button>
+              ))}
+            </Row>
+          </div>
+
+          {/* Campos do item */}
           <Row style={{ marginBottom: 8, alignItems: "flex-end" }}>
             <div style={{ flex: 2, minWidth: 100 }}>
-              <Field label="Descrição" value={addItem.nome}
-                onChange={e => setAI({ ...addItem, nome: e.target.value })} placeholder="Item" />
+              <Field label="Descrição *" value={addItem.nome}
+                onChange={e => setAI({ ...addItem, nome: e.target.value })}
+                placeholder={addItem.tipo === "servico" ? "Ex: Troca de óleo" : "Ex: Filtro de óleo"} />
             </div>
             <div style={{ flex: 1, minWidth: 70 }}>
-              <Field label="R$" value={addItem.valor}
+              <Field label="R$ Unit." value={addItem.valor}
                 onChange={e => setAI({ ...addItem, valor: e.target.value })}
                 placeholder="0,00" type="number" inputMode="decimal" />
             </div>
@@ -1214,23 +1245,63 @@ ${emp.telefone ? `📞 Dúvidas: ${emp.telefone}` : ""}`;
                 type="number" inputMode="numeric" />
             </div>
           </Row>
-          <Btn onClick={adicionarItem} style={{ width: "100%", marginBottom: 12 }} color={C.blue}>
-            ＋ Adicionar Item
-          </Btn>
 
+          {/* Subtotal preview */}
+          {addItem.nome && addItem.valor && (
+            <div style={{ background: C.bg, borderRadius: 8, padding: "6px 12px", marginBottom: 10, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span style={{ color: C.muted }}>Subtotal:</span>
+              <span style={{ color: C.accent, fontWeight: 800 }}>{fmt(Number(addItem.valor) * Number(addItem.quantidade || 1))}</span>
+            </div>
+          )}
+
+          {/* Botões de ação */}
+          <Row gap={8} style={{ marginBottom: 12 }}>
+            <Btn onClick={adicionarItem} style={{ flex: 2 }} color={C.blue}>
+              ＋ Adicionar ao Orçamento
+            </Btn>
+            <Btn onClick={() => {
+              if (!addItem.nome.trim()) { alert("Informe o nome antes de salvar."); return; }
+              if (!addItem.valor) { alert("Informe o valor antes de salvar."); return; }
+              const prods = db.get("produtos");
+              if (prods.find(p => p.nome.toLowerCase() === addItem.nome.toLowerCase())) {
+                alert("Já existe um produto com esse nome no banco!"); return;
+              }
+              db.set("produtos", [...prods, {
+                id: uid(), nome: addItem.nome, valor: addItem.valor,
+                tipo: addItem.tipo, descricao: "", estoque: "", criadoEm: hoje(),
+              }]);
+              alert(`✅ "${addItem.nome}" salvo no banco de produtos!`);
+            }} style={{ flex: 1 }} color={C.green}>
+              💾 Salvar
+            </Btn>
+          </Row>
+
+          {/* Legenda */}
+          <div style={{ background: C.bg, borderRadius: 8, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+            💡 <b style={{ color: C.text }}>Dica:</b> Clique em <b style={{ color: C.green }}>💾 Salvar</b> para guardar no banco e usar em próximos orçamentos sem precisar redigitar.
+          </div>
+
+          {/* Lista de itens adicionados */}
           {form.itens.length === 0 && (
             <div style={{ textAlign: "center", color: C.muted, padding: 16, fontSize: 13 }}>
-              Nenhum item adicionado
+              Nenhum item adicionado ainda
             </div>
           )}
 
           {form.itens.map(item => (
             <div key={item.id} style={{ background: C.bg, borderRadius: 10, padding: "10px 12px", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{item.nome}</div>
-                <div style={{ color: C.muted, fontSize: 12 }}>x{item.quantidade} × {fmt(item.valor)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{item.nome}</div>
+                  <Badge color={item.tipo === "servico" ? C.blue : C.green} >
+                    {item.tipo === "servico" ? "Serviço" : "Peça"}
+                  </Badge>
+                </div>
+                <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>
+                  x{item.quantidade} × {fmt(Number(item.valor))}
+                </div>
               </div>
-              <div style={{ fontWeight: 800, color: C.accent }}>{fmt(item.valor * item.quantidade)}</div>
+              <div style={{ fontWeight: 800, color: C.accent }}>{fmt(Number(item.valor) * Number(item.quantidade))}</div>
               <button onClick={() => setForm(f => ({ ...f, itens: f.itens.filter(x => x.id !== item.id) }))}
                 style={{ background: C.red + "22", color: C.red, borderRadius: 8, padding: "6px 10px", fontWeight: 900, minWidth: 36, minHeight: 36 }}>×</button>
             </div>
@@ -1238,7 +1309,7 @@ ${emp.telefone ? `📞 Dúvidas: ${emp.telefone}` : ""}`;
 
           {form.itens.length > 0 && (
             <div style={{ background: C.accent + "22", borderRadius: 12, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-              <div style={{ fontWeight: 700 }}>TOTAL</div>
+              <div style={{ fontWeight: 700 }}>TOTAL DO ORÇAMENTO</div>
               <div style={{ fontSize: 24, fontWeight: 900, color: C.accent }}>{fmt(total)}</div>
             </div>
           )}
