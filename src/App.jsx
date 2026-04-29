@@ -482,7 +482,7 @@ function HomeScreen({ navigate, usuario, onLogout }) {
 const FORM_VAZIO = {
   nome: "", telefone: "", email: "", cpf: "",
   marca: "", modelo: "", ano: "", cor: "", placa: "", km: "",
-  fotos: [], checklist: {}, obs: "",
+  checklist: {}, obs: "",
 };
 
 function ClientesScreen() {
@@ -572,14 +572,6 @@ function ClientesScreen() {
                   </div>
                 ))}
               </div>
-            </Card>
-          )}
-
-          {/* Fotos */}
-          {c.fotos && c.fotos.length > 0 && (
-            <Card style={{ marginBottom: 12 }}>
-              <div style={{ fontWeight: 800, marginBottom: 12 }}>📸 Fotos do Veículo</div>
-              <FotoUpload fotos={c.fotos} onChange={() => {}} readOnly />
             </Card>
           )}
 
@@ -679,10 +671,6 @@ function ClientesScreen() {
             </Row>
           </Card>
 
-          <Card style={{ marginBottom: 12 }}>
-            <FotoUpload fotos={form.fotos} onChange={fotos => set("fotos", fotos)} />
-          </Card>
-
           <Card style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
             <button onClick={() => setCkAberto(!ckAberto)} style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -763,12 +751,8 @@ function ClientesScreen() {
             <div style={{
               width: 48, height: 48, borderRadius: 12, background: C.accent + "22",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 22, flexShrink: 0, overflow: "hidden",
-            }}>
-              {c.fotos && c.fotos.length > 0
-                ? <img src={c.fotos[0]} style={{ width: 48, height: 48, objectFit: "cover" }} />
-                : "🚗"}
-            </div>
+              fontSize: 22, flexShrink: 0,
+            }}>🚗</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 800, fontSize: 15 }}>{c.nome}</div>
               <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>
@@ -776,10 +760,7 @@ function ClientesScreen() {
               </div>
               {c.telefone && <div style={{ color: C.muted, fontSize: 12 }}>📱 {c.telefone}</div>}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-              {c.fotos && c.fotos.length > 0 && <Badge color={C.blue}>{c.fotos.length}📷</Badge>}
-              <div style={{ color: C.muted, fontSize: 20 }}>›</div>
-            </div>
+            <div style={{ color: C.muted, fontSize: 20 }}>›</div>
           </div>
         ))}
 
@@ -1060,7 +1041,7 @@ function OrcamentoScreen({ usuario, editOrcamento }) {
   const VAZIO = {
     clienteNome: "", clienteTelefone: "", clientePlaca: "",
     clienteVeiculo: "", data: hoje(), validade: "",
-    itens: [], obs: "", id: null,
+    itens: [], obs: "", fotos: [], id: null,
   };
   const [form, setForm]   = useState(editOrcamento || VAZIO);
   const [buscaC, setBuscaC] = useState("");
@@ -1266,6 +1247,11 @@ ${emp.telefone ? `📞 Dúvidas: ${emp.telefone}` : ""}`;
           )}
         </Card>
 
+        {/* Fotos do Veículo */}
+        <Card style={{ marginBottom: 12 }}>
+          <FotoUpload fotos={form.fotos || []} onChange={fotos => setForm(f => ({ ...f, fotos }))} />
+        </Card>
+
         {/* Obs */}
         <Card style={{ marginBottom: 12 }}>
           <Lbl>📝 Observações</Lbl>
@@ -1349,7 +1335,9 @@ function VendasScreen({ navigate, setEditOrcamento }) {
         id: uid(), orcamentoId: orc.id,
         clienteNome: orc.clienteNome, clienteTelefone: orc.clienteTelefone,
         clientePlaca: orc.clientePlaca, clienteVeiculo: orc.clienteVeiculo,
-        total: orc.total, data: hoje(), itens: orc.itens, criadoPor: orc.criadoPor,
+        total: orc.total, data: hoje(), itens: orc.itens,
+        fotos: orc.fotos || [],
+        criadoPor: orc.criadoPor,
       };
       db.set("vendas", [...allVendas, novaVenda]);
       setVendas([...allVendas, novaVenda]);
@@ -1420,6 +1408,13 @@ function VendasScreen({ navigate, setEditOrcamento }) {
             <Card style={{ marginBottom: 12 }}>
               <div style={{ fontWeight: 800, marginBottom: 6 }}>📝 Observações</div>
               <div style={{ color: C.muted, fontSize: 14 }}>{o.obs}</div>
+            </Card>
+          )}
+
+          {o.fotos && o.fotos.length > 0 && (
+            <Card style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, marginBottom: 10 }}>📸 Fotos do Veículo ({o.fotos.length})</div>
+              <FotoUpload fotos={o.fotos} onChange={() => {}} readOnly />
             </Card>
           )}
 
@@ -1524,6 +1519,13 @@ ${emp.telefone ? `\n📞 ${emp.telefone}` : ""}`;
               <span style={{ color: C.green }}>{fmt(v.total)}</span>
             </div>
           </Card>
+
+          {v.fotos && v.fotos.length > 0 && (
+            <Card style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, marginBottom: 10 }}>📸 Fotos do Veículo ({v.fotos.length})</div>
+              <FotoUpload fotos={v.fotos} onChange={() => {}} readOnly />
+            </Card>
+          )}
 
           {/* Formas de pagamento */}
           <Card style={{ marginBottom: 12 }}>
