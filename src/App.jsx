@@ -374,9 +374,6 @@ function LoginScreen({ onLogin }) {
         )}
 
         <Btn onClick={entrar} style={{ width: "100%", fontSize: 16 }}>🔑 Entrar</Btn>
-        <div style={{ color: C.muted, fontSize: 11, textAlign: "center", marginTop: 16 }}>
-          Login padrão: <b style={{ color: C.text }}>admin</b> / Senha: <b style={{ color: C.text }}>admin123</b>
-        </div>
       </div>
 
       <div style={{ color: C.muted + "66", fontSize: 11, marginTop: 20 }}>v2.0 • Oficina Auto</div>
